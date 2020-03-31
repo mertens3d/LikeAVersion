@@ -43,10 +43,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfoFileHandler.cs" />
     <Compile Include="ChangedProjectEventArgs.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="CsProjArray.cs" />
     <Compile Include="CsVersion.cs" />
     <Compile Include="FileTools.cs" />
+    <Compile Include="HumanFeedback.cs" />
     <Compile Include="OneRefData.cs" />
     <Compile Include="OneTargetFile.cs" />
     <Compile Include="OneWatchedFile.cs" />
@@ -64,6 +67,7 @@
     <None Include="log4net.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="TargetData.xml.Example" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TargetData.xml">

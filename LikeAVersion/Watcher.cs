@@ -4,7 +4,7 @@ using System.IO;
 
 namespace LikeAVersion
 {
-    public class Watcher
+    public class OneTargetedDirectoryOfTypeMonitor
     {
         #region Fields
 
@@ -14,10 +14,10 @@ namespace LikeAVersion
 
         #region Constructors
 
-        public Watcher(List<string> excludedFiles)
+        public OneTargetedDirectoryOfTypeMonitor(List<string> excludedFiles)
         {
             excludedFiles.ForEach(x => excludedFilesLc.Add(x.ToLower()));
-            this.excludedFilesLc = excludedFiles;
+            //this.excludedFilesLc = excludedFiles;
         }
 
         #endregion Constructors
@@ -40,7 +40,6 @@ namespace LikeAVersion
 
         public void MonitorDirectory(ProjectData projectData, string filter)
         {
-            Console.WriteLine("Watching: " + projectData.CsProjFile.Directory.FullName + " filter: " + filter);
             filesystemwatcher = new FileSystemWatcher();
             filesystemwatcher.Path = projectData.CsProjFile.Directory.FullName;
             filesystemwatcher.Filter = filter;
@@ -55,6 +54,7 @@ namespace LikeAVersion
             filesystemwatcher.EnableRaisingEvents = true;
             ChangedProject = projectData;
         }
+
         private void FileSystemWatcher_Changed(object sender, FileSystemEventArgs args)
         {
             bool okToProceed = true;
@@ -84,9 +84,9 @@ namespace LikeAVersion
 
             if (okToProceed)
             {
-                Console.WriteLine("");
-                Console.WriteLine("-------");
-                Console.WriteLine("");
+                HumanFeedback.ToHuman("");
+                HumanFeedback.ToHuman("-------");
+                HumanFeedback.ToHuman("");
 
                 if (OnFileChanged != null)
                 {
@@ -95,16 +95,18 @@ namespace LikeAVersion
 
                     if (diff > ChangedProject.MinSpan)
                     {
-                        Console.WriteLine("Changed Trigger: " + triggerFileName);
-                        Console.WriteLine("Changed Project: " + ChangedProject.projName);
+                        HumanFeedback.ToHuman("Changed Trigger: " + triggerFileName);
+                        HumanFeedback.ToHuman("Changed Project: " + ChangedProject.projName);
                         ChangedProject.LastTriggerTime = now;
                         OnFileChanged(null, new ChangedProjectEventArgs(ChangedProject));
                     }
                     else
                     {
-                        Console.WriteLine("Ignoring (not enough time diff) : " + ChangedProject.projName);
+                        HumanFeedback.ToHuman("Ignoring (not enough time diff) : " + ChangedProject.projName + " " + diff + " vs " + ChangedProject.MinSpan);
                     }
                 }
+                HumanFeedback.ToHuman("Update Complete");
+                HumanFeedback.WriteMenu();
             }
         }
 
