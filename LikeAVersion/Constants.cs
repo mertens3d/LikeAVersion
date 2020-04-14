@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LikeAVersion
+﻿namespace mertensd.LikeAVersion
 {
-   public static class Constants
+    public static class Constants
     {
+        #region Fields
 
-      public static string assemblyPrefix = "assembly: AssemblyVersion";
+        public static string assemblyPrefix = "assembly: AssemblyVersion";
+
+        public static string TargetDataXml = "TargetData.xml";
+
+        #endregion Fields
     }
 }

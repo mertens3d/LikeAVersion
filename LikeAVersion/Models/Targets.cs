@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace LikeAVersion
+namespace mertense3d.LikeAVersion.Models
 {
     public class Targets
     {

@@ -1,4 +1,4 @@
-﻿namespace LikeAVersion
+﻿namespace mertensd.LikeAVersion.Enums
 {
     public enum ReturnState
     {

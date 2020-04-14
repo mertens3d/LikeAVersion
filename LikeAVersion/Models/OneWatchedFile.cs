@@ -1,4 +1,4 @@
-﻿namespace LikeAVersion
+﻿namespace mertense3d.LikeAVersion
 {
     public class OneWatchedFile
     {

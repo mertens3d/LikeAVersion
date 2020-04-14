@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace LikeAVersion
+namespace mertensd.LikeAVersion.Models
 {
     public class ProjectData
     {
-
         #region Properties
 
         public FileInfo AssemblyInfoFile { get; set; }
@@ -15,13 +14,12 @@ namespace LikeAVersion
         public DateTime LastTriggerTime { get; set; } = DateTime.Now;
         public int MinSpan { get; internal set; }
         public string ProjectGuidAsString { get; set; }
-        public string projName { get; set; }
+        public string ProjName { get; set; }
         public List<OneRefData> RawRefData { get; set; } = new List<OneRefData>();
         public List<ProjectData> ReferencedFiles { get; set; } = new List<ProjectData>();
-        public List<ProjectData> ReverseRef { get; set; } = new List<ProjectData>();
-        public List<ProjectData> UpsteamProjects { get; internal set; }
+        public List<ProjectData> ProjThatRefThisProj { get; set; } = new List<ProjectData>();
+        public List<OneUpStreamProj> UpsteamProjects { get; internal set; }
 
         #endregion Properties
-
     }
 }

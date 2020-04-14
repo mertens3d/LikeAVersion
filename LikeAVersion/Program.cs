@@ -1,6 +1,7 @@
-﻿using System.Security.Permissions;
+﻿using mertens3d.LikeAVersion;
+using System.Security.Permissions;
 
-namespace LikeAVersion
+namespace mertense3d.LikeAVersion
 {
     internal class Program
     {

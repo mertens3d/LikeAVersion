@@ -1,7 +1,7 @@
-﻿using System;
-using System.IO;
+﻿using mertensd.LikeAVersion.Models;
+using System;
 
-namespace LikeAVersion
+namespace mertensd.LikeAVersion.Watcher
 {
     public class ChangedProjectEventArgs : EventArgs
     {

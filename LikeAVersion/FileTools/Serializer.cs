@@ -1,13 +1,13 @@
 ﻿using System.IO;
 using System.Xml.Serialization;
 
-namespace LikeAVersion
+namespace mertens3d.LikeAVersion.FileTools
 {
     public class Serializer
     {
         public T Deserialize<T>(string input) where T : class
         {
-            System.Xml.Serialization.XmlSerializer ser = new System.Xml.Serialization.XmlSerializer(typeof(T));
+            XmlSerializer ser = new XmlSerializer(typeof(T));
 
             using (StringReader sr = new StringReader(input))
             {

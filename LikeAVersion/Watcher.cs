@@ -1,8 +1,12 @@
-﻿using System;
+﻿using mertensd.LikeAVersion;
+using mertensd.LikeAVersion.Feedback;
+using mertensd.LikeAVersion.Models;
+using mertensd.LikeAVersion.Watcher;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace LikeAVersion
+namespace mertense3d.LikeAVersion
 {
     public class OneTargetedDirectoryOfTypeMonitor
     {
@@ -14,8 +18,9 @@ namespace LikeAVersion
 
         #region Constructors
 
-        public OneTargetedDirectoryOfTypeMonitor(List<string> excludedFiles)
+        public OneTargetedDirectoryOfTypeMonitor(List<string> excludedFiles, Reporter reporter)
         {
+            this.Reporter = reporter;
             excludedFiles.ForEach(x => excludedFilesLc.Add(x.ToLower()));
             //this.excludedFilesLc = excludedFiles;
         }
@@ -33,6 +38,7 @@ namespace LikeAVersion
         public ProjectData ChangedProject { get; set; }
         public List<string> FilesToIgnore { get; set; }
         private FileSystemWatcher filesystemwatcher { get; set; }
+        private Reporter Reporter { get; }
 
         #endregion Properties
 
@@ -58,35 +64,16 @@ namespace LikeAVersion
         private void FileSystemWatcher_Changed(object sender, FileSystemEventArgs args)
         {
             bool okToProceed = true;
-            var triggerFullFileName = string.Empty;
-            if (args.ChangeType.Equals(WatcherChangeTypes.Renamed))
-            {
-                var renameArgs = args as RenamedEventArgs;
-                if (args != null)
-                {
-                    triggerFullFileName = renameArgs.OldFullPath;
-                }
-            }
-            else
-            {
-                var modifiedFile = args.Name;
-                triggerFullFileName = args.FullPath;
-                {
-                    okToProceed = false;
-                }
-            }
-            var triggerFileName = new FileInfo(triggerFullFileName).Name;
+            string triggerFileName = GetFileNameFromArgs(args);
 
-            if (excludedFilesLc.Contains(triggerFileName.ToLower()))
-            {
-                okToProceed = false;
-            }
+            okToProceed = okToProceed && !string.IsNullOrEmpty(triggerFileName);
+            okToProceed = okToProceed && !excludedFilesLc.Contains(triggerFileName.ToLower());
 
             if (okToProceed)
             {
-                HumanFeedback.ToHuman("");
-                HumanFeedback.ToHuman("-------");
-                HumanFeedback.ToHuman("");
+                Reporter.ToHuman("");
+                Reporter.ToHuman("-------");
+                Reporter.ToHuman("");
 
                 if (OnFileChanged != null)
                 {
@@ -95,19 +82,44 @@ namespace LikeAVersion
 
                     if (diff > ChangedProject.MinSpan)
                     {
-                        HumanFeedback.ToHuman("Changed Trigger: " + triggerFileName);
-                        HumanFeedback.ToHuman("Changed Project: " + ChangedProject.projName);
+                        Reporter.ToHuman("Changed Trigger: " + triggerFileName);
+                        Reporter.ToHuman("Changed Project: " + ChangedProject.ProjName);
                         ChangedProject.LastTriggerTime = now;
                         OnFileChanged(null, new ChangedProjectEventArgs(ChangedProject));
                     }
                     else
                     {
-                        HumanFeedback.ToHuman("Ignoring (not enough time diff) : " + ChangedProject.projName + " " + diff + " vs " + ChangedProject.MinSpan);
+                        Reporter.ToHuman("Ignoring (not enough time diff) : " + ChangedProject.ProjName + " " + diff + " vs " + ChangedProject.MinSpan);
                     }
                 }
-                HumanFeedback.ToHuman("Update Complete");
-                HumanFeedback.WriteMenu();
+                Reporter.ToHuman("Update Complete");
+                Reporter.WriteMenu();
             }
+        }
+
+        private static string GetFileNameFromArgs(FileSystemEventArgs args)
+        {
+            string toReturn = string.Empty;
+            var triggerFullFileName = string.Empty;
+            if (args.ChangeType.Equals(WatcherChangeTypes.Renamed))
+            {
+                var renameArgs = args as RenamedEventArgs;
+                if (args != null)
+                {
+                    triggerFullFileName = renameArgs.OldFullPath;
+                    toReturn = new FileInfo(triggerFullFileName).Name;
+                }
+            }
+            else
+            {
+                var modifiedFile = args.Name;
+                triggerFullFileName = string.Empty;// args.FullPath;
+                //{
+                //    okToProceed = false;
+                //}
+            }
+
+            return toReturn;
         }
 
         #endregion Methods
