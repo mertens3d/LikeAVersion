@@ -43,14 +43,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommonBase_a.cs" />
+    <Compile Include="Hub.cs" />
     <Compile Include="Feedback\Reporter.cs" />
+    <Compile Include="FileTools\SettingsFile.cs" />
     <Compile Include="Models\OneUpStreamProj.cs" />
+    <Compile Include="RuntimeValues.cs" />
     <Compile Include="Toucher\AssemblyInfoFileHandler.cs" />
     <Compile Include="Build\Builder.cs" />
     <Compile Include="Watcher\ChangedProjectEventArgs.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Models\CsProjArray.cs" />
-    <Compile Include="CsVersion.cs" />
+    <Compile Include="LikeAVersion.cs" />
     <Compile Include="FileTools\FileIO.cs" />
     <Compile Include="Models\Dead.cs" />
     <Compile Include="Models\ProjArray.cs" />
@@ -62,10 +66,11 @@
     <Compile Include="Enums\ReturnState.cs" />
     <Compile Include="FileTools\Serializer.cs" />
     <Compile Include="Models\slnData.cs" />
-    <Compile Include="Models\Targets.cs" />
+    <Compile Include="Models\XmlSettings.cs" />
     <Compile Include="Toucher\AssemToucher.cs" />
-    <Compile Include="Watcher.cs" />
+    <Compile Include="Watcher\OneTargetedDirectoryOfTypeMonitor.cs" />
     <Compile Include="Watcher\Watcher.cs" />
+    <Compile Include="Watcher\WatcherStatus.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

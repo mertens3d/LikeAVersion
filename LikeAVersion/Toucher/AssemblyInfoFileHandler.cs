@@ -1,4 +1,4 @@
-﻿using log4net;
+﻿using mertensd.LikeAVersion.Build;
 using mertensd.LikeAVersion.Feedback;
 using mertensd.LikeAVersion.FileTools;
 using mertensd.LikeAVersion.Models;
@@ -8,37 +8,26 @@ using System.Text.RegularExpressions;
 
 namespace mertensd.LikeAVersion.Toucher
 {
-    public class AssemblyInfoFileHandler
+    public class AssemblyInfoFileHandler : CommonBase_a
     {
-        #region Fields
-
-        private ILog _log;
-
-        public Reporter Reporter { get; }
-
-        #endregion Fields
-
-        #region Constructors
-
-        public AssemblyInfoFileHandler(ILog log, Reporter reporter)
+        public AssemblyInfoFileHandler(HeartBeatHub hub) : base(hub)
         {
-            _log = log;
-            Reporter = reporter;
         }
-
-        #endregion Constructors
 
         #region Methods
 
-        public void changeHandleOneProject(ProjectData oneProj, int depth)
+        public void UpdateOneProject(ProjectData oneProj, int depth)
         {
             var assemblyInfo = oneProj.AssemblyInfoFile;
             if (assemblyInfo != null)
             {
-                var newText = Constants.assemblyPrefix + "(\"" + GetSuffix() + "\")] //this file auto changed by: " + System.Reflection.Assembly.GetExecutingAssembly().Location;
+                var newText = Constants.assemblyPrefix + "(\"" + GetSuffix()
+                    + Constants.AssemblyFileComment
+                    + System.Reflection.Assembly.GetExecutingAssembly().Location;
+
                 var regexPat = Constants.assemblyPrefix + ".*";
 
-                _log.Debug("s) UpdateAssemblyInfo (" + assemblyInfo.ToString() + ")");
+                Hub.Logger.Debug("s) UpdateAssemblyInfo (" + assemblyInfo.ToString() + ")");
 
                 if (assemblyInfo != null)
                 {
@@ -46,14 +35,14 @@ namespace mertensd.LikeAVersion.Toucher
                 }
                 else
                 {
-                    _log.Debug("Candidate AssemblyInfo NOT found");
+                    Hub.Logger.Debug("Candidate AssemblyInfo NOT found");
                 }
 
                 oneProj.LastAssemblyWrite = DateTime.Now;
             }
             else
             {
-                Reporter.ToHuman("Skipping (not enough time diff) :" + oneProj.ProjName);
+                Hub.Reporter.Error("Null :" + oneProj.ProjName);
             }
         }
 
@@ -72,7 +61,7 @@ namespace mertensd.LikeAVersion.Toucher
 
         public void ModifyAssemblyInfoFile(FileInfo assemblyInfoFile, string regexPat, string newText, ProjectData oneProj, int depth)
         {
-            _log.Debug("s) ModifyAssemblyInfoFile (" + assemblyInfoFile + ")");
+            Hub.Logger.Debug("s) ModifyAssemblyInfoFile (" + assemblyInfoFile + ")");
 
             var fileContents = FileIO.ReadFileAsChuck(assemblyInfoFile);
 
@@ -93,12 +82,24 @@ namespace mertensd.LikeAVersion.Toucher
                     indent += "\t";
                 }
 
-                Reporter.ToHuman(indent + "Modifying AssemblyInfo for: " + oneProj.ProjName);// assemblyInfoFile.FullName);
+                var modifyMessage = indent;
+                if (depth == 0)
+                {
+                    modifyMessage += "Modifying owner AssemblyInfo.cs for: ";
+                }
+                else
+                {
+                    modifyMessage += "Modifying upstream AssemblyInfo.cs for: ";
+                }
+
+                modifyMessage += oneProj.ProjName;
+                Hub.Reporter.ToHuman(modifyMessage);
+
                 FileIO.WriteChunckToFile(assemblyInfoFile, fileContents);
             }
             else
             {
-                Reporter.ToHuman("\t\t***   AssemInfo not configured for: " + delta + " vs " + maxFileLengthChange + " " + oneProj.ProjName + "   ***");// assemblyInfoFile.FullName);
+                Hub.Reporter.ToHuman("\t\t***   AssemInfo not configured for: " + delta + " vs " + maxFileLengthChange + " " + oneProj.ProjName + "   ***");// assemblyInfoFile.FullName);
             }
         }
 

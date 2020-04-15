@@ -1,26 +1,16 @@
 ﻿using log4net;
 using mertens3d.LikeAVersion;
+using mertensd.LikeAVersion.Build;
 using System;
 using System.Linq;
 
 namespace mertensd.LikeAVersion.Feedback
 {
-    public class Reporter
+    public class Reporter : CommonBase_a
     {
-        #region Fields
-
-        private ILog log;
-
-        #endregion Fields
-
-        #region Constructors
-
-        public Reporter(ILog log)
+        public Reporter(HeartBeatHub hub) : base(hub)
         {
-            this.log = log;
         }
-
-        #endregion Constructors
 
         #region Methods
 
@@ -46,9 +36,16 @@ namespace mertensd.LikeAVersion.Feedback
             }
         }
 
-        public static void ToHuman(string output)
+        internal void Error(string message)
         {
-            Console.WriteLine(DateTime.Now.ToShortTimeString() + " : " + output);
+            Hub.Logger.Error(message);
+            Console.WriteLine(DateTime.Now.ToShortTimeString() + " : *ERROR* " + message);
+        }
+
+        public void ToHuman(string message)
+        {
+            Hub.Logger.Debug(message);
+            Console.WriteLine(DateTime.Now.ToShortTimeString() + " : " + message);
         }
 
         public void WriteMenu()

@@ -11,8 +11,7 @@ namespace mertensd.LikeAVersion.Models
         public FileInfo AssemblyInfoFile { get; set; }
         public FileInfo CsProjFile { get; set; }
         public DateTime LastAssemblyWrite { get; set; } = DateTime.Now;
-        public DateTime LastTriggerTime { get; set; } = DateTime.Now;
-        public int MinSpan { get; internal set; }
+        public DateTime LastUpdateTime { get; set; } = DateTime.Now;
         public string ProjectGuidAsString { get; set; }
         public string ProjName { get; set; }
         public List<OneRefData> RawRefData { get; set; } = new List<OneRefData>();

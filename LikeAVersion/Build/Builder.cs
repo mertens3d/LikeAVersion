@@ -1,11 +1,7 @@
-﻿using log4net;
-using mertens3d.LikeAVersion;
-using mertens3d.LikeAVersion.FileTools;
+﻿using mertens3d.LikeAVersion;
 using mertensd.LikeAVersion.Enums;
-using mertensd.LikeAVersion.Feedback;
 using mertensd.LikeAVersion.FileTools;
 using mertensd.LikeAVersion.Models;
-using mertense3d.LikeAVersion.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,22 +11,12 @@ using System.Xml.Linq;
 
 namespace mertensd.LikeAVersion.Build
 {
-    public class DataBuilder
+    public class DataBuilder : CommonBase_a
     {
-        #region Fields
-
-        private ILog logger;
-
-        public Reporter Reporter { get; }
-
-        #endregion Fields
-
         #region Constructors
 
-        public DataBuilder(ILog logger, Reporter reporter)
+        public DataBuilder(HeartBeatHub hub) : base(hub)
         {
-            this.logger = logger;
-            this.Reporter = reporter;
         }
 
         #endregion Constructors
@@ -47,29 +33,62 @@ namespace mertensd.LikeAVersion.Build
         {
             this.ProjAr = new CsProjArray();
 
-            ReadSettingsFromXml();
-            PopulateSolutionObj();
-            ReadSolutionFile();
-            PopulateProjectsInSolutionDataFromXDoc();
-            PopulateCleanRefData();
-            CrossReferenceRefFiles();
-            CalculateUpstreamProj();
+            ReadSettingsXml();
+
+            if (Hub.XmlData != null)
+            {
+                PopulateSolutionObj();
+                ReadSolutionFile();
+                PopulateProjectsInSolutionDataFromXDoc();
+                PopulateCleanRefData();
+                CrossReferenceRefFiles();
+                CalculateUpstreamProj();
+            }
 
             return this.ProjAr;
         }
 
-        private void CalculateUpstreamProj()
+        public void CrossReferenceRefFiles()
         {
-            foreach (var oneSlnProject in ProjAr.SlnData.WatchedProjects)
+            foreach (var oneProj in ProjAr.SlnData.WatchedProjects)
             {
-                if (oneSlnProject != null)
-                {
-                    oneSlnProject.UpsteamProjects = GetUpstreamProjectsRecursive(oneSlnProject,
-                        new List<OneUpStreamProj>(),
+                CrossRefOneProject(oneProj);
+            }
+        }
 
-                        0);
+        public void CrossRefOneProject(ProjectData project)
+        {
+            foreach (var oneRef in project.ReferencedFiles)
+            {
+                oneRef.ProjThatRefThisProj.Add(project);
+            }
+        }
+
+        public FileInfo getFirstFileByExt(string targetExt, DirectoryInfo targetDir)
+        {
+            FileInfo toReturn = null;
+            Hub.Logger.Debug("s) getFirstFileByExt: " + targetExt + "  " + targetDir.FullName);
+
+            var isValid = targetDir.Exists;
+
+            Hub.Logger.Debug("Is Valid Path: " + isValid);
+
+            if (isValid)
+            {
+                var dirCont = targetDir.GetFiles("*." + targetExt).ToList();
+
+                if (dirCont != null && dirCont.Any())
+                {
+                    toReturn = dirCont[0];
+                }
+                else
+                {
+                    Hub.Logger.Error("First not found");
                 }
             }
+
+            Hub.Logger.Debug("e) returning: " + toReturn);
+            return toReturn;
         }
 
         public List<OneUpStreamProj> GetUpstreamProjectsRecursive(ProjectData rootProj, List<OneUpStreamProj> knownUpsteam, int depth)
@@ -114,52 +133,9 @@ namespace mertensd.LikeAVersion.Build
             return toReturnList;
         }
 
-        public void CrossRefOneProject(ProjectData project)
-        {
-            foreach (var oneRef in project.ReferencedFiles)
-            {
-                oneRef.ProjThatRefThisProj.Add(project);
-            }
-        }
-
-        public void CrossReferenceRefFiles()
-        {
-            foreach (var oneProj in ProjAr.SlnData.WatchedProjects)
-            {
-                CrossRefOneProject(oneProj);
-            }
-        }
-
-        public FileInfo getFirstFileByExt(string targetExt, DirectoryInfo targetDir)
-        {
-            FileInfo toReturn = null;
-            logger.Debug("s) getFirstFileByExt: " + targetExt + "  " + targetDir.FullName);
-
-            var isValid = targetDir.Exists;
-
-            logger.Debug("Is Valid Path: " + isValid);
-
-            if (isValid)
-            {
-                var dirCont = targetDir.GetFiles("*." + targetExt).ToList();
-
-                if (dirCont != null && dirCont.Any())
-                {
-                    toReturn = dirCont[0];
-                }
-                else
-                {
-                    logger.Error("First not found");
-                }
-            }
-
-            logger.Debug("e) returning: " + toReturn);
-            return toReturn;
-        }
-
         public void ReadSolutionFile()
         {
-            logger.Debug("s) ReadSolutionFile: " + ProjAr.SlnData.SolutionFolder.FullName);
+            Hub.Logger.Debug("s) ReadSolutionFile: " + ProjAr.SlnData.SolutionFolder.FullName);
             var slnFile = getFirstFileByExt("sln", ProjAr.SlnData.SolutionFolder);
 
             if (slnFile != null)
@@ -169,20 +145,23 @@ namespace mertensd.LikeAVersion.Build
             }
         }
 
-        private bool CheckForInclusion(ProjectData projData, string foundProjectName, bool found)
+        private void CalculateUpstreamProj()
         {
-            var includeIt = true;
-            foreach (var oneProj in ProjAr.AllTargets.IgnoredProjects)
+            foreach (var oneSlnProject in ProjAr.SlnData.WatchedProjects)
             {
-                if (oneProj.Equals(foundProjectName, StringComparison.OrdinalIgnoreCase))
+                if (oneSlnProject != null)
                 {
-                    includeIt = false;
-                    Reporter.ToHuman("Ignoring: " + foundProjectName);
-                    break;
+                    oneSlnProject.UpsteamProjects = GetUpstreamProjectsRecursive(oneSlnProject,
+                        new List<OneUpStreamProj>(),
+
+                        0);
                 }
             }
+        }
 
-            if (includeIt)
+        private bool CheckForInclusionExclusion(ProjectData projData, string foundProjectName, bool found)
+        {
+            if (!IsItExcluded(foundProjectName))
             {
                 projData.ProjName = foundProjectName;
 
@@ -197,18 +176,35 @@ namespace mertensd.LikeAVersion.Build
             return found;
         }
 
+        private bool IsItExcluded(string foundProjectName)
+        {
+            var toReturn = false;
+            foreach (var oneProj in Hub.XmlData.IgnoredProjects)
+            {
+                if (oneProj.Equals(foundProjectName, StringComparison.OrdinalIgnoreCase))
+                {
+                    toReturn = true;
+                    Hub.Reporter.ToHuman("Ignoring (in <IgnoredProjects>): " + foundProjectName);
+                    break;
+                }
+            }
+
+            return toReturn;
+        }
+
         private void PopulateCleanRefData()
         {
             foreach (var oneProj in ProjAr.SlnData.WatchedProjects)
             {
-                Reporter.ToHuman("Studying Refs for: " + oneProj.ProjName);
+                Hub.Reporter.ToHuman("Studying Refs for: " + oneProj.ProjName);
                 foreach (var oneRef in oneProj.RawRefData)
                 {
-                    var realProj = ProjAr.SlnData.WatchedProjects.FirstOrDefault(x => x.ProjectGuidAsString.Equals(oneRef.ProjectGuidAsString, StringComparison.OrdinalIgnoreCase));
+                    var realProj = ProjAr.SlnData.WatchedProjects
+                        .FirstOrDefault(x => x.ProjectGuidAsString.Equals(oneRef.ProjectGuidAsString, StringComparison.OrdinalIgnoreCase));
                     if (realProj != null)
                     {
                         oneProj.ReferencedFiles.Add(realProj);
-                        Reporter.ToHuman("\tAdding Ref: " + realProj.ProjName);
+                        Hub.Reporter.ToHuman("\tAdding Ref: " + realProj.ProjName);
                     }
                 }
             }
@@ -219,10 +215,11 @@ namespace mertensd.LikeAVersion.Build
             foreach (var oneProj in ProjAr.SlnData.WatchedProjects)
             {
                 XNamespace msbuild = "http://schemas.microsoft.com/developer/msbuild/2003";
-                XDocument projDefinition = XDocument.Load(oneProj.CsProjFile.FullName);
 
                 try
                 {
+                    XDocument projDefinition = XDocument.Load(oneProj.CsProjFile.FullName);
+
                     var references = projDefinition
                          .Element(msbuild + "Project")
                          .Elements(msbuild + "ItemGroup")
@@ -280,7 +277,7 @@ namespace mertensd.LikeAVersion.Build
                 }
                 catch (Exception ex)
                 {
-                    logger.Debug(oneProj.ProjName + " does no have project references");
+                    Hub.Reporter.Error(oneProj.ProjName + ex.Message);
                 }
             }
         }
@@ -289,7 +286,7 @@ namespace mertensd.LikeAVersion.Build
         {
             ProjAr.SlnData = new SlnData
             {
-                SolutionFolder = new DirectoryInfo(ProjAr.AllTargets.SolutionFolder)
+                SolutionFolder = new DirectoryInfo(Hub.XmlData.TargetSolutionFolder)
             };
         }
 
@@ -303,7 +300,7 @@ namespace mertensd.LikeAVersion.Build
                     if (data.Length > 1)
                     {
                         var projRelPath = data[1];
-                        logger.Debug("> " + projRelPath);
+                        Hub.Logger.Debug("> " + projRelPath);
                         if (projRelPath.IndexOf("csproj") > 0)
                         {
                             ProcessOneFoundCsProjLin(projRelPath, data);
@@ -315,16 +312,13 @@ namespace mertensd.LikeAVersion.Build
 
         private void ProcessOneFoundCsProjLin(string projRelPath, string[] data)
         {
-            //projRelPath = projRelPath.replace(/ "/gi, "");
-
             projRelPath = projRelPath.Replace("\"", "").Trim();
 
-            var projData = new ProjectData
-            {
-                MinSpan = ProjAr.AllTargets.MinMSecSpan
-            };
-
             var projFullPath = Path.Combine(ProjAr.SlnData.SolutionFolder.FullName, projRelPath);
+            var projData = new ProjectData()
+            {
+                CsProjFile = new FileInfo(projFullPath)
+            };
 
             var foundProjectName = data[0];
 
@@ -333,34 +327,20 @@ namespace mertensd.LikeAVersion.Build
             foundProjectName = foundProjectName.Replace("\"", string.Empty);
             foundProjectName = foundProjectName.Trim();
 
-            projData.CsProjFile = new FileInfo(projFullPath);
             bool found = false;
-            found = CheckForInclusion(projData, foundProjectName, found);
+            found = CheckForInclusionExclusion(projData, foundProjectName, found);
         }
 
-        private void ReadSettingsFromXml()
+        private void ReadSettingsXml()
         {
-            string assembly = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            FileInfo assemblyFile = new FileInfo(assembly);
-            FileInfo targetXml = new FileInfo(Path.Combine(assemblyFile.DirectoryName, Constants.TargetDataXml));
-            Serializer ser = new Serializer();
+            FileInfo targetXml = new FileInfo(Path.Combine(
+                Hub.RunTimeValues.AssemblyDirectory,
+                Constants.TargetDataXml));
 
-            if (targetXml.Exists)
-            {
-                string xmlInputData = File.ReadAllText(targetXml.FullName);
-                try
-                {
-                    ProjAr.AllTargets = ser.Deserialize<Targets>(xmlInputData);
-                }
-                catch (Exception ex)
-                {
-                    logger.Error(ex.Message);
-                }
-            }
-            else
-            {
-                logger.Error("Did not find settings file: " + targetXml.FullName);
-            }
+            Hub.Reporter.ToHuman("Reading settings file: " + targetXml);
+
+            var settingsReader = new SettingsFile(Hub);
+            Hub.XmlData = settingsReader.ReadFromXml(targetXml);
         }
 
         #endregion Methods

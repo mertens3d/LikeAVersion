@@ -5,13 +5,13 @@ namespace mertense3d.LikeAVersion
 {
     internal class Program
     {
-        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        //private static readonly log4net.ILog Hub.Logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
         private static void Main(string[] args)
         {
-            CsVersion csVersion = new CsVersion();
-            csVersion.Stream(_log);
+            mertens3d.LikeAVersion.ShineyAndNew csVersion = new mertens3d.LikeAVersion.ShineyAndNew();
+            csVersion.Stream();
         }
     }
 }
